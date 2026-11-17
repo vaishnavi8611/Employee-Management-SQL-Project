@@ -1,7 +1,14 @@
+-- Employee Management Database Project
+-- Database: EmployeeManagmentDB
+-- SQL Server
+
+-- Create the Employee Management Database
 CREATE DATABASE EmployeeManagmentDB
 
+-- Select the database
 USE EmployeeManagmentDB
 
+-- Create Departments table
 CREATE TABLE Departments 
 (
    DepartmentID INT PRIMARY KEY,
@@ -9,6 +16,7 @@ CREATE TABLE Departments
    DeptLocation VARCHAR(50)
  )
 
+-- Create JobRoles table  
  CREATE TABLE JobRoles
  (
     JobRoleID INT PRIMARY KEY,
@@ -22,6 +30,7 @@ CREATE TABLE Departments
         )
 )
 
+-- Create Employees table with foreign key relationships
 CREATE TABLE Employees
 (
    EmployeeID INT PRIMARY KEY,
@@ -44,18 +53,8 @@ CREATE TABLE Employees
       REFERENCES Employees(EmployeeID) 
  )
 
- SELECT * FROM Sys.tables
- ORDER BY Name
-
- SELECT * FROM Departments
-
- SELECT * FROM JobRoles
-
-/*1.Display 
-    EmployeeID
-    FirstName
-    Salary
-Only employees earning more than ₹60,000.*/
+--Data Analysis & Business Problems with SQL Solutions
+-- 1. Display employees earning more than 60,000.
 
 SELECT 
   EmployeeID,
@@ -64,7 +63,7 @@ SELECT
 FROM Employees
 WHERE Salary > 60000
 
---2.Display each employee's first name, salary, department name, and job title.
+-- 2. Display employee details with department and job title.
 
 SELECT
   E.FirstName,
@@ -77,7 +76,7 @@ INNER JOIN Departments D ON
 JOIN JobRoles J ON 
     (E.JobRoleID = J.JobRoleID)
 
---3. Display all employees earning more than ₹60,000, along with their department names and job titles. Sort the results by salary from highest to lowest.
+-- 3. Display employees earning more than 60,00,000 sorted by salary.
 
 SELECT
   E.FirstName,
@@ -92,7 +91,7 @@ JOIN JobRoles J
 WHERE E.Salary > 6000000
 ORDER BY E.Salary DESC
 
---4.: Display each employee whose salary is greater than the average salary of their own department.
+-- 4. Find employees earning above their department's average salary.
 SELECT * FROM Employees
 
 SELECT
@@ -107,8 +106,7 @@ WHERE E.Salary > (
     WHERE E2.DepartmentID = E.DepartmentID
     )
 
---5.Display every employee's name, salary, department ID, and salary rank within their department, with the highest salary ranked first.
-
+-- 5. Rank employees by salary within each department.
 SELECT 
   FirstName,
   Salary,
@@ -119,8 +117,7 @@ SELECT
     ) AS SalaryRank
 FROM Employees
 
---6.Display the top two salary ranks within each department, including employees who tie at those ranks
-     
+-- 6. Find the top two salary ranks in each department.
 WITH EmployeeRank AS(
     SELECT 
       FirstName,
@@ -141,8 +138,7 @@ FROM EmployeeRank
 WHERE SalaryRank <= 2
 ORDER BY DepartmentID, Salary DESC
 
---7.Display all employees who earn the maximum salary in their department, including ties.
-
+-- 7. Find the highest-paid employees in each department.
 WITH EmployeesRank AS (
   SELECT
      FirstName,
@@ -150,7 +146,7 @@ WITH EmployeesRank AS (
      DepartmentID,
      DENSE_RANK() OVER(
          PARTITION BY DepartmentID
-         ORDER BY Salary
+         ORDER BY Salary DESC
      ) AS SalaryRank
  FROM Employees
 )
@@ -164,10 +160,7 @@ WHERE SalaryRank = 1
 ORDER BY DepartmentID, Salary DESC
 
 
---8.Display DepartmentID, DepartmentName, and AverageSalary for departments where the average employee salary is greater than ₹60,000.
-
-SELECT * FROM Departments
-
+-- 8. Find departments with an average salary above 600000.
 SELECT 
   D.DepartmentID,
   D.DepartmentName,
@@ -177,9 +170,8 @@ JOIN Employees E
    ON D.DepartmentID = E.DepartmentID
 GROUP BY D.DepartmentID, D.DepartmentName
 HAVING AVG(E.Salary) > 600000
-
---9.Display the employee's name, salary, manager's name, and manager's salary — but only when the employee earns more than their manager.
-
+   
+-- 9. Find employees earning more than their managers
 SELECT
   E.FirstName + ' ' + E.LastName AS EmployeeName,
   E.Salary AS EmployeeSalary,
@@ -190,19 +182,7 @@ INNER JOIN Employees E
    ON E.ManagerID = M.EmployeeID
 WHERE E.Salary > M.Salary
 
---Method 2
-SELECT 
-  CONCAT(E.FirstName,' ', E.LastName) AS EmployeeName,
-  E.Salary AS EmployeeSalary,
-  CONCAT(M.FirstName, ' ', M.LastName) AS ManagerName,
-  M.Salary AS ManagerSalary
-FROM Employees E
-INNER JOIN Employees M
-   ON E.ManagerID = M.EmployeeID
-WHERE E.Salary > M.Salary
-
---10. Display the EmployeeID, FirstName, and Salary of employees who don't have a manager assigned.
-
+-- 10. Find employees who do not have a manager.
 SELECT 
    EmployeeID,
    FirstName,
@@ -211,8 +191,7 @@ SELECT
 FROM Employees
 WHERE ManagerID IS NULL
 
---11.Display the DepartmentID and DepartmentName of departments that have no employees assigned.
-
+-- 11. Find departments without employees.
 SELECT
    D.DepartmentID,
    D.DepartmentName
@@ -223,8 +202,7 @@ WHERE NOT EXISTS(
     WHERE E.DepartmentID = D.DepartmentID
     )
 
---method 2
-
+--Alternate Method
 SELECT 
    D.DepartmentID,
    D.DepartmentName
@@ -233,8 +211,7 @@ LEFT JOIN Employees E
    ON D.DepartmentID = E.DepartmentID
 WHERE E.EmployeeID IS  NULL
 
---12. create a view that displays employee details along with their department and job title.
-
+-- 12. Create a view for employee details.
 CREATE VIEW dbo.vw_EmployeeDetails
 AS
 SELECT 
@@ -255,8 +232,7 @@ INNER JOIN JobRoles J
 
 SELECT * FROM vw_employeeDetails
 
---13.HR should be able to enter a department ID and retrieve its employees, ordered by salary from highest to lowest.
-
+-- 13. Create a stored procedure to retrieve employees by department.
 ALTER PROCEDURE dbo.GetEmployeesByDepartment
 @DepartmentID INT
 AS
@@ -273,8 +249,7 @@ END
 
 EXEC dbo.GetEmployeesByDepartment @DepartmentID = 60
 
---14. Now modify the procedure so that it returns employees earning more than a salary amount supplied by the user, within a specified department.
-
+-- 14. Add a minimum salary filter to the stored procedure.
  ALTER PROCEDURE dbo.GetEmployeesByDepartment
  @DepartmentID INT,
  @MinSalary DECIMAL(10,2)
@@ -294,9 +269,7 @@ EXEC dbo.GetEmployeesByDepartment @DepartmentID = 60
     @DepartmentId = 1,
     @MinSalary=  700000
 
-/*15. Requirement: If the user supplies @MinSalary, return employees earning above it. If they omit it, return all employees in the selected department.
-Your task: modify the stored procedure so @MinSalary defaults to NULL and the filtering condition handles both cases. */
-
+-- 15. Make the minimum salary parameter optional.
 ALTER PROCEDURE dbo.GetEmployeesByDepartment
 @DepartmentID INT,
 @MinSalary DECIMAL(10,2) = NULL
@@ -317,8 +290,7 @@ EXEC dbo.GetEmployeesByDepartment
    @DepartmentID = 1
 
 
---16. HR wants to retrieve employees using an optional department ID and an optional minimum salary.
-
+-- 16. Make department and minimum salary filters optional.
 ALTER PROCEDURE dbo.GetEmployeesByDepartment
 @DepartmentId INT = NULL,
 @MinSalary DECIMAL(10,2) = NULL
@@ -352,8 +324,7 @@ EXEC dbo.GetEmployeesByDepartment
   @MinSalary = 300000
 
 
---17.Keep your optional filters and salary sorting, but also return the total number of employees matching the filters.
-
+-- 17. Display the total matching employee count.
 ALTER PROCEDURE GetTotalEmployeesByDepartment
 @DepartmentID INT = NULL,
 @MinSalary DECIMAL(10,2)  = NULL
@@ -389,13 +360,7 @@ EXEC dbo.GetTotalEmployeesByDepartment
 EXEC dbo.GetTotalEmployeesByDepartment 
   @MinSalary = 300000
 
-/*18.Your correction challenge
-Make these three changes yourself:
-1. Count all rows in the filtered result, not separate department groups.
-2. Correct the salary comparison.
-3. Restore descending salary order.*/
-
-
+-- 18. Update the procedure using COUNT() OVER().
 CREATE PROCEDURE GetTotalEmployeeS
 @DepartmentID INT = NULL,
 @MinSalary DECIMAL(10,2)  = NULL
@@ -420,15 +385,8 @@ BEGIN
     @Minsalary = 600000
 
 
-/*19. HR now wants to identify the highest-paid employee in each department.
-- FirstName
-- LastName
-- DepartmentID
-- Salary
-Requirements:
-1. Rank employees within each department by salary, highest first.
-2. Return only employees ranked first in their department.
-3. If two employees tie for the highest salary in a department, return both.*/
+-- 19. Find the highest-paid employee in each department.
+
 WITH EmployeeRank AS( 
    SELECT 
      FirstName,
@@ -445,7 +403,7 @@ SELECT *
 FROM EmployeeRank 
 WHERE HighestSalary <=1
 
---20.Management wants to identify departments whose average employee salary is higher than the average salary across the entire company.
+-- 20. Find departments with an average salary above the company average.
 
  SELECT
    DepartmentID,
@@ -454,7 +412,8 @@ WHERE HighestSalary <=1
  GROUP BY DepartmentID
  HAVING AVG(Salary) > (SELECT AVG(Salary) FROM Employees)
 
- --21.HR wants to identify employees whose salary is higher than the average salary of their own department.
+-- 21. Find employees earning above their department average.
+   
  SELECT
    E.EmployeeID,
    E.FirstName,
@@ -468,8 +427,7 @@ WHERE HighestSalary <=1
       WHERE E2.DepartmentID = E.DepartmentID
       )
     
---22. HR wants the employee or employees with the second-highest distinct salary in each department. If two employees tie at that salary, return both.
-
+-- 22. Find the second-highest distinct salary in each department.
 WITH EmployeeRank AS (
   SELECT 
     EmployeeID,
@@ -490,8 +448,7 @@ WITH EmployeeRank AS (
  FROM EmployeeRank 
  WHERE EmpRank = 2
 
- --23.HR wants to identify employees whose salary is higher than their direct manager's salary.
-
+ -- 23. Find employees earning more than their managers
  SELECT
    E.EmployeeID,
    E.FirstName,
@@ -503,8 +460,7 @@ JOIN Employees M
    ON E.ManagerID = M.EmployeeID
 WHERE E.Salary > M.Salary
 
---24. HR wants to identify departments that currently have no employees assigned to them.
-
+-- 24. Find departments without employees.
 SELECT 
   D.DepartmentID,
   D.DepartmentName
@@ -512,20 +468,8 @@ FROM Departments D
 LEFT JOIN Employees E
   ON  D.DepartmentID = E.DepartmentID 
 WHERE E.DepartmentID IS NULL
-
---method 2
-  SELECT 
-     D.DepartmentID,
-     D.DepartmentName
-    FROM Departments D
-    WHERE NOT EXISTS (
-        SELECT 1
-         FROM Employees E
-         WHERE E.DepartmentID = D.DepartmentID
-        )
-
---25.HR wants to identify salaries paid to more than one employee within the same department.
-
+   
+-- 25. Find duplicate salaries within each department.
 SELECT 
   DepartmentID,
   Salary,
@@ -534,35 +478,16 @@ FROM Employees
 GROUP BY DepartmentID,
       Salary
  HAVING Count(*) >= 2
-
-
---26.HR wants a list of employees hired during the last 12 months
-
+   
+-- 26. Find employees hired in the last 12 months.
 SELECT 
   EmployeeID,
   FirstName,
   HireDate
 FROM Employees
-WHERE HireDate >= DATEADD(MONTH,-12,GETDATE()) 
+WHERE HireDate >= DATEADD(MONTH,-12,GETDATE())
 
-SELECT 
-  EmployeeID,
-  FirstName,
-  DATEADD(MONTH, -12, GETDATE()) AS HireDate
-FROM Employees
-
-/*27.Find employees hired in each year
-Business problem: HR wants to analyse employee hiring trends by year.
-
-Return:
-- HireYear
-- TotalEmployees
-Requirements:
-1. Extract the year from HireDate.
-2. Count employees hired in each year.
-3. Group the results by year.
-4. Sort from the most recent hiring year to the oldest.*/
-
+-- 27. Count employees hired in each year.
 SELECT
   YEAR(HireDate) AS HireYear,
   COUNT(*) AS TotaEmployees
@@ -570,9 +495,7 @@ FROM Employees
 GROUP BY YEAR(HireDate)
 ORDER BY YEAR(HireDate) DESC
 
-/*28.Find the monthly hiring count
-HR wants to know how many employees were hired in each month of each year.*/
-
+-- 28. Count employees hired in each month.
 SELECT 
   YEAR(HireDate) AS HireYear,
   MONTH(HireDate) AS HireMonth,
@@ -581,7 +504,7 @@ FROM Employees
 GROUP BY YEAR(HireDate),
        MONTH(HireDate)
 
---29.HR wants to identify employees whose joining date fell on a Saturday or Sunday.
+-- 29. Find employees hired on weekends.
 SELECT
   EmployeeID,
   FirstName,
@@ -591,8 +514,7 @@ WHERE DATENAME(WEEKDAY, HireDate) = 'Saturday'
 OR DATENAME(WEEKDAY, HireDate) = 'Sunday'
 
 
---30.HR wants to identify employees who joined during the same calendar month, regardless of the year.
-
+-- 30. Find employees hired in May, regardless of year.
 SELECT 
   EmployeeID,
   FirstName,
@@ -600,8 +522,7 @@ SELECT
 FROM Employees
 WHERE MONTH(HireDate) = 5
 
---31.HR wants to find employees hired in May 2025 only.
-
+-- 31. Find employees hired in May 2025.
 SELECT 
   EmployeeID,
   FirstName,
@@ -610,8 +531,7 @@ FROM Employees
 WHERE YEAR(HireDate) = 2025
    AND MONTH(HireDate) = 5
 
---32.HR wants a list of employees hired between January and March 2025.
-
+-- 32. Find employees hired between January and March 2025.
 SELECT
   EmployeeID,
   FirstName,
@@ -620,8 +540,7 @@ FROM Employees
 WHERE YEAR(HireDate) = 2025 AND
    MONTH(HireDate) BETWEEN 1 AND 3 
 
---33.HR wants employees who joined within the last six months.
-
+-- 33. Find employees hired in the last six months.
 SELECT
   EmployeeID,
   FirstName,
@@ -629,8 +548,7 @@ SELECT
 FROM Employees
  WHERE HireDate >= DATEADD(MONTH, -6, GETDATE())
 
---34. HR wants to identify employees with more than five years of service.
-
+-- 34. Find employees with more than five years of service.
 SELECT
   EmployeeID,
   FirstName,
@@ -638,8 +556,7 @@ SELECT
 FROM Employees
 WHERE HireDate <= DATEADD(YEAR, -5, GETDATE())
 
---35 Find employees hired during the current calendar year.
-
+-- 35. Find employees hired in the current year.
 SELECT 
   EmployeeID,
   FirstName,
@@ -647,8 +564,7 @@ SELECT
 FROM Employees
 WHERE HireDate BETWEEN '2026-01-01' AND GETDATE()
   
---36.HR wants all employees who joined during the previous calendar year.
-
+-- 36. Find employees hired in the previous year.
 SELECT
    EmployeeID,
    FirstName,
@@ -657,8 +573,7 @@ FROM Employees
 WHERE HireDate >= '2025-01-01' AND 
       HireDate <= '2025-12-31'
 
---37.HR wants to categorize employees based on their hiring quarter for the year 2025.
-
+-- 37. Categorize employees by hiring quarter
 SELECT
    EmployeeID,
    FirstName,
@@ -672,8 +587,7 @@ SELECT
 FROM Employees  
 WHERE YEAR(HireDate) = 2025
 
---38.Count employees hired in each quarter of 2025
-
+-- 38. Count employees hired in each quarter of 2025.
 SELECT 
   CASE DATEPART(QUARTER, HireDate)
      WHEN 1 THEN 'Q1'
@@ -686,8 +600,7 @@ FROM Employees
 WHERE YEAR(HireDate) =2025
 GROUP BY DATEPART(QUARTER, HireDate)
 
---39.HR wants to identify which quarter had the highest number of new employees in 2025.
-
+-- 39. Find the busiest hiring quarter in 2025.
 SELECT
   CASE DATEPART(QUARTER, HireDate) 
      WHEN 1 THEN 'Q1'
@@ -700,10 +613,8 @@ FROM Employees
 WHERE YEAR(HireDate) = 2025
 GROUP BY DATEPART(QUARTER, HireDate)
 ORDER BY COUNT(*) DESC
-
-
---40.HR wants to know what percentage of all employees hired in 2025 joined in each quarter.
-
+   
+-- 40. Calculate the hiring percentage for each quarter.
 SELECT 
   CASE DATEPART(QUARTER, HireDate) 
      WHEN 1 THEN 'Q1'
@@ -723,12 +634,7 @@ WHERE YEAR(HireDate) = 2025
 GROUP BY DATEPART(QUARTER, HireDate)
 ORDER BY DATEPART(QUARTER, HireDate) 
 
-/*COUNT(*) → counts employees in each quarter.
-SUM() → adds those quarterly counts.
-OVER() → makes the sum available across all grouped rows without collapsing them into one row.*/
-
---41.HR wants to track how employee hiring increases month by month throughout 2025.
-
+-- 41. Calculate the monthly hiring running total.
 SELECT
   MONTH(HireDate) AS HiringMonth,
   COUNT(*) AS TotalEmployees,
@@ -739,8 +645,7 @@ FROM Employees
 WHERE YEAR(HireDate) = 2025
 GROUP BY MONTH(HireDate)
 
---42.HR wants to identify the busiest hiring month in 2025.
-
+-- 42. Find the busiest hiring month in 2025.
 SELECT TOP 1
   MONTH(HireDate) AS HiringMonth,
   COUNT(*) AS TotalEmployees
@@ -749,8 +654,7 @@ WHERE YEAR(HireDate) = 2025
 GROUP BY MONTH(HireDate)
 ORDER BY COUNT(*) DESC
 
---43.HR wants a monthly hiring report with readable month names instead of numbers.
-
+-- 43. Display monthly hiring counts with month names.
 SELECT
   CASE MONTH(HireDate)
      WHEN 1 THEN 'January'
@@ -772,7 +676,7 @@ WHERE YEAR(HireDate) = 2025
 GROUP BY MONTH(HireDate)
 ORDER BY MONTH(HireDate)
 
---Second Method
+--Alternate Method
 
 SELECT
   DATENAME(MONTH,HireDate) AS HiringMonth,
@@ -781,10 +685,8 @@ FROM Employees
 WHERE YEAR(HireDate) = 2025
 GROUP BY DATENAME(MONTH, HireDate), MONTH(HireDate)
 ORDER BY MONTH(HireDate)
-
-
---44.HR wants to identify which months had no new employees hired during 2025.
-
+   
+-- 44. Find months with no new employees in 2025.
 WITH Months AS
 (
     SELECT 1 AS MonthNumber, 'January' AS HiringMonth
@@ -810,8 +712,7 @@ LEFT JOIN Employees E
 GROUP BY M.MonthNumber, M.HiringMonth
 ORDER BY M.MonthNumber;
 
---44.HR wants a complete monthly hiring report for 2025, including months with zero hires.
-
+-- 45. Generate a complete monthly hiring report for 2025.
 WITH Months AS
 (
     SELECT 1 AS MonthNumber, 'January' AS HiringMonth
